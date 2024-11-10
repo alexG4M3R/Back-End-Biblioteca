@@ -5,7 +5,8 @@ const LibroSchema = new mongoose.Schema({
     autor: String,
     age: Number,
     isbn: String,
-    disponible: Boolean
+    disponible: Boolean,
+    categoria: { type: mongoose.Schema.Types.ObjectId, ref: 'Categoria' }
 });
 
 module.exports = mongoose.model('Libro', LibroSchema);
