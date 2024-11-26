@@ -1,1 +1,9 @@
-GET http://localhost:3000/api/libros
+POST  http://localhost:3001/api/libros
+{
+    "titulo": "Guerra II",
+    "autor": "persona x",
+    "age": 1889,
+    "isbn": "4353245",
+    "disponible": true,
+    "categoria": "historia"
+}

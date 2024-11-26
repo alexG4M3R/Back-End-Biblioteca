@@ -3,11 +3,18 @@ const mongoose = require('mongoose');
 
 const obtenerLibros = async (req, res) => {
     try {
-        const libros = await Libro.find();
-        res.status(200).json({
-            status: "éxito",
-            libros
-        });
+        const { titulo, autor } = req.query;
+        const query = { disponible: true };
+
+        if (titulo) {
+            query.titulo = { $regex: titulo, $options: 'i' }; // Búsqueda insensible a mayúsculas/minúsculas
+        }
+        if (autor) {
+            query.autor = { $regex: autor, $options: 'i' }; // Búsqueda insensible a mayúsculas/minúsculas
+        }
+
+        const libros = await Libro.find(query);
+        res.status(200).json(libros);
     } catch (error) {
         res.status(500).json({
             status: "error",

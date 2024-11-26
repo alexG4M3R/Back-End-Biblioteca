@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Reserva = require('../models/Reserva');
+const Reserva = require('../models/reserva');
 const Libro = require('../models/Libro');
 
 const obtenerReservas = async (req, res) => {

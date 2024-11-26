@@ -1,18 +1,40 @@
 const mongoose = require('mongoose');
 const Prestamo = require('../models/Prestamo');
+const Usuario = require('../models/Usuario'); // Importar el modelo Usuario
 const Libro = require('../models/Libro');
 
 const obtenerPrestamos = async (req, res) => {
     try {
-        const prestamos = await Prestamo.find().populate('libro').populate('usuario');
+        const solicitudes = await Prestamo.find({ estado: 'pendiente' }).populate('usuario').populate('libros');
         res.status(200).json({
             status: "éxito",
-            prestamos
+            solicitudes
         });
     } catch (error) {
         res.status(500).json({
             status: "error",
-            mensaje: "Error al obtener los préstamos",
+            mensaje: "Error al obtener las solicitudes pendientes",
+            error: error.message
+        });
+    }
+};
+
+
+
+const obtenerSolicitudPorId = async (req, res) => {
+    try {
+        const solicitud = await Prestamo.findById(req.params.id).populate('usuario').populate('libros');
+        if (!solicitud) {
+            return res.status(404).json({
+                status: "error",
+                mensaje: "Solicitud no encontrada"
+            });
+        }
+        res.status(200).json(solicitud);
+    } catch (error) {
+        res.status(500).json({
+            status: "error",
+            mensaje: "Error al obtener la solicitud",
             error: error.message
         });
     }
@@ -20,50 +42,50 @@ const obtenerPrestamos = async (req, res) => {
 
 const crearPrestamo = async (req, res) => {
     try {
-        const { libro, usuario, fechaPrestamo, fechaDevolucion } = req.body;
+        const { usuarioId, libros, tipo } = req.body;
 
-        if (!libro || !usuario || !fechaPrestamo || !fechaDevolucion) {
+        if (!usuarioId || !libros || !tipo) {
+            console.log("el usuario es: ", usuarioId, "los libros son:",libros, "el tipo es: ",tipo);
             return res.status(400).json({
                 status: "error",
                 mensaje: "Faltan datos por enviar"
             });
         }
 
-        const libroEncontrado = await Libro.findById(libro);
-        if (!libroEncontrado) {
-            return res.status(404).json({
-                status: "error",
-                mensaje: "Libro no encontrado"
-            });
-        }
-        if (!libroEncontrado.disponible) {
+        const usuario = await Usuario.findById(usuarioId);
+        if (!usuario) {
             return res.status(400).json({
                 status: "error",
-                mensaje: "El libro no está disponible para préstamo"
+                mensaje: "Usuario no encontrado"
             });
         }
 
-        const nuevoPrestamo = new Prestamo({
-            libro,
-            usuario,
-            fechaPrestamo,
-            fechaDevolucion
+        const nuevaSolicitud = new Prestamo({
+            usuario: usuarioId,
+            libros,
+            fechaPrestamo: new Date(), // Fecha de préstamo predeterminada a la fecha actual
+            fechaDevolucion: new Date(Date.now() + 7*24*60*60*1000), // Fecha de devolución predeterminada a una semana después
+            tipo
         });
 
-        const prestamoGuardado = await nuevoPrestamo.save();
+        const solicitudGuardada = await nuevaSolicitud.save();
 
-        await Libro.findByIdAndUpdate(libro, { disponible: false });
+        await Usuario.findByIdAndUpdate(usuarioId, { $push: { prestamos: solicitudGuardada._id } });
+        await Promise.all(libros.map(async (libroId) => {
+            await Libro.findByIdAndUpdate(libroId, { $push: { prestamos: solicitudGuardada._id }, disponible: false });
+        }));
 
         return res.status(200).json({
             status: "éxito",
-            prestamo: prestamoGuardado,
-            mensaje: "Préstamo creado correctamente!!"
+            solicitud: solicitudGuardada,
+            mensaje: "Solicitud creada correctamente!!"
         });
 
     } catch (error) {
+        console.error('Error al crear la solicitud:', error);
         return res.status(500).json({
             status: "error",
-            mensaje: "Error al guardar el préstamo",
+            mensaje: "Error al crear la solicitud",
             error: error.message
         });
     }
@@ -71,34 +93,22 @@ const crearPrestamo = async (req, res) => {
 
 const actualizarPrestamo = async (req, res) => {
     try {
-        const prestamoId = req.params.id;
-
-        if (!mongoose.Types.ObjectId.isValid(prestamoId)) {
-            return res.status(400).json({
-                status: "error",
-                mensaje: "ID de préstamo no válido"
-            });
-        }
-
-        const prestamoActualizado = await Prestamo.findByIdAndUpdate(prestamoId, req.body, { new: true });
-
-        if (!prestamoActualizado) {
+        const solicitud = await Prestamo.findByIdAndUpdate(req.params.id, { estado: 'registrado' }, { new: true });
+        if (!solicitud) {
             return res.status(404).json({
                 status: "error",
-                mensaje: "Préstamo no encontrado"
+                mensaje: "Solicitud no encontrada"
             });
         }
-
-        return res.status(200).json({
+        res.status(200).json({
             status: "éxito",
-            prestamo: prestamoActualizado,
-            mensaje: "Préstamo actualizado correctamente"
+            solicitud,
+            mensaje: "Estado de la solicitud actualizado a registrado"
         });
-
     } catch (error) {
-        return res.status(500).json({
+        res.status(500).json({
             status: "error",
-            mensaje: "Error al actualizar el préstamo",
+            mensaje: "Error al actualizar el estado de la solicitud",
             error: error.message
         });
     }
@@ -143,6 +153,7 @@ const eliminarPrestamo = async (req, res) => {
 
 module.exports = {
     obtenerPrestamos,
+    obtenerSolicitudPorId,
     crearPrestamo,
     actualizarPrestamo,
     eliminarPrestamo

@@ -16,12 +16,17 @@ router.delete('/libros/:id', libroController.eliminarLibro);
 
 // Rutas de Usuarios
 router.get('/usuarios', usuarioController.obtenerUsuarios);
+router.get('/usuarios/:rut', usuarioController.obtenerUsuarioPorRut);
 router.post('/usuarios', usuarioController.crearUsuario);
 router.put('/usuarios/:id', usuarioController.actualizarUsuario);
 router.delete('/usuarios/:id', usuarioController.eliminarUsuario);
 
+// Ruta de Login
+router.post('/login', usuarioController.login);
+
 // Rutas de Prestamos
 router.get('/prestamos', prestamoController.obtenerPrestamos);
+router.get('/prestamos/:id', prestamoController.obtenerSolicitudPorId);
 router.post('/prestamos', prestamoController.crearPrestamo);
 router.put('/prestamos/:id', prestamoController.actualizarPrestamo);
 router.delete('/prestamos/:id', prestamoController.eliminarPrestamo);

@@ -1,5 +1,7 @@
 const Usuario = require('../models/Usuario');
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const obtenerUsuarios = async (req, res) => {
     try {
@@ -17,11 +19,30 @@ const obtenerUsuarios = async (req, res) => {
     }
 };
 
+const obtenerUsuarioPorRut = async (req, res) => {
+    try {
+        const usuario = await Usuario.findOne({ rut: req.params.rut });
+        if (!usuario) {
+            return res.status(404).json({
+                status: "error",
+                mensaje: "Usuario no encontrado"
+            });
+        }
+        res.status(200).json(usuario);
+    } catch (error) {
+        res.status(500).json({
+            status: "error",
+            mensaje: "Error al obtener el usuario",
+            error: error.message
+        });
+    }
+};
+
 const crearUsuario = async (req, res) => {
     try {
-        const { nombre, email, rut, telefono, password, rol, direccion } = req.body;
+        const { nombre, user, email, rut, telefono, password, rol, direccion } = req.body;
 
-        if (!nombre || !email || !rut || !telefono || !password || !rol || !direccion) {
+        if (!nombre || !user || !email || !rut || !telefono || !password || !rol || !direccion) {
             return res.status(400).json({
                 status: "error",
                 mensaje: "Faltan datos por enviar"
@@ -36,12 +57,15 @@ const crearUsuario = async (req, res) => {
             });
         }
 
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         const nuevoUsuario = new Usuario({
             nombre,
+            user,
             email,
             rut,
             telefono,
-            password,
+            password: hashedPassword,
             rol,
             direccion
         });
@@ -126,9 +150,34 @@ const eliminarUsuario = async (req, res) => {
     }
 };
 
+const login = async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        const usuario = await Usuario.findOne({ email });
+        if (!usuario) {
+            return res.status(400).json({ mensaje: 'Usuario no encontrado' });
+        }
+
+        // const esValido = await bcrypt.compare(password, usuario.password);
+        if (password !== usuario.password) {
+            return res.status(400).json({ mensaje: 'Contraseña incorrecta' });
+        }
+
+        const token = jwt.sign({ id: usuario._id, rol: usuario.rol }, 'secreto', { expiresIn: '1h' });
+
+        res.json({ token, id: usuario._id, rol: usuario.rol });
+        console.log("el usuario id es: ", usuario._id, "el rol es: ", usuario.rol);
+    } catch (error) {
+        res.status(500).json({ mensaje: 'Error en el servidor', error: error.message });
+    }
+};
+
 module.exports = {
     obtenerUsuarios,
+    obtenerUsuarioPorRut,
     crearUsuario,
     actualizarUsuario,
-    eliminarUsuario
+    eliminarUsuario,
+    login
 };

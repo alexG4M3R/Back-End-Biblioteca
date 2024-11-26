@@ -2,7 +2,7 @@ const express = require('express');
 const { conexion } = require('./basedatos/conexion');
 
 const app = express();
-const port = 3000;
+const port = 3001;
 
 conexion();
 
