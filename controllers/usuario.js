@@ -38,54 +38,35 @@ const obtenerUsuarioPorRut = async (req, res) => {
     }
 };
 
+
 const crearUsuario = async (req, res) => {
-    try {
-        const { nombre, user, email, rut, telefono, password, rol, direccion } = req.body;
+  try {
+    const { nombre, rut, email, password, rol } = req.body;
 
-        if (!nombre || !user || !email || !rut || !telefono || !password || !rol || !direccion) {
-            return res.status(400).json({
-                status: "error",
-                mensaje: "Faltan datos por enviar"
-            });
-        }
-
-        const usuarioExistente = await Usuario.findOne({ email });
-        if (usuarioExistente) {
-            return res.status(400).json({
-                status: "error",
-                mensaje: "El email ya está registrado"
-            });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const nuevoUsuario = new Usuario({
-            nombre,
-            user,
-            email,
-            rut,
-            telefono,
-            password: hashedPassword,
-            rol,
-            direccion
-        });
-
-        const usuarioGuardado = await nuevoUsuario.save();
-
-        return res.status(200).json({
-            status: "éxito",
-            usuario: usuarioGuardado,
-            mensaje: "Usuario creado correctamente!!"
-        });
-
-    } catch (error) {
-        return res.status(500).json({
-            status: "error",
-            mensaje: "Error al guardar el usuario",
-            error: error.message
-        });
+    if (!nombre || !rut || !email || !password || !rol) {
+      return res.status(400).json({ mensaje: 'Todos los campos son obligatorios' });
     }
+
+    const usuarioExistente = await Usuario.findOne({ rut });
+    if (usuarioExistente) {
+      return res.status(400).json({ mensaje: 'El RUT ya está registrado' });
+    }
+
+    const correoExistente = await Usuario.findOne({ email });
+    if (correoExistente) {
+        return res.status(400).json({ mensaje: 'El correo ya está registrado' });
+    }
+
+    const nuevoUsuario = new Usuario({ nombre, rut, email, password, rol });
+    await nuevoUsuario.save();
+
+    res.status(201).json({ mensaje: 'Usuario creado correctamente' });
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al crear el usuario', error: error.message });
+  }
 };
+
+
 
 const actualizarUsuario = async (req, res) => {
     try {

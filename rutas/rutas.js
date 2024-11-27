@@ -10,9 +10,13 @@ const router = express.Router();
 
 // Rutas de Libros
 router.get('/libros', libroController.obtenerLibros);
-router.post('/libros', libroController.crearLibro);
+// router.post('/libros', libroController.crearLibro);
 router.put('/libros/:id', libroController.actualizarLibro);
-router.delete('/libros/:id', libroController.eliminarLibro);
+router.delete('/libros/:isbn', libroController.eliminarLibro);
+
+router.post('/libros', libroController.agregarLibro);
+router.get('/libros/:isbn', libroController.obtenerLibroPorIsbn);
+router.delete('/libros/:id', libroController.eliminar);
 
 // Rutas de Usuarios
 router.get('/usuarios', usuarioController.obtenerUsuarios);
@@ -26,10 +30,14 @@ router.post('/login', usuarioController.login);
 
 // Rutas de Prestamos
 router.get('/prestamos', prestamoController.obtenerPrestamos);
+router.get('/prestamosO', prestamoController.obtenerPrestamo);
+
 router.get('/prestamos/:id', prestamoController.obtenerSolicitudPorId);
 router.post('/prestamos', prestamoController.crearPrestamo);
 router.put('/prestamos/:id', prestamoController.actualizarPrestamo);
 router.delete('/prestamos/:id', prestamoController.eliminarPrestamo);
+
+router.post('/devoluciones', prestamoController.devolverLibro);
 
 // Rutas de Sanciones
 router.get('/sanciones', sancionController.obtenerSanciones);
