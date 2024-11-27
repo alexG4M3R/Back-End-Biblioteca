@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Sancion = require('../models/Sancion');
+const Sancion = require('../models/sancion');
 
 const obtenerSanciones = async (req, res) => {
     try {

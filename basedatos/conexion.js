@@ -1,16 +1,18 @@
+const mongoose = require('mongoose');
+require('dotenv').config(); // Cargar las variables de entorno desde el archivo .env
 
-const mongoose = require("mongoose");
+const uri = process.env.MONGODB_URI; // Obtener la URI de MongoDB desde las variables de entorno
 
 const conexion = async () => {
-    try {
-        await mongoose.connect("mongodb://127.0.0.1:27017/mi_blog");
-        console.log("Conectado correctamente a la base de datos mi_blog !!");
-    } catch (error) {
-        console.log(error);
-        throw new Error("No se ha podido conectar a la base de datos !!");
-    }
-}
+  try {
+    await mongoose.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('Conectado a MongoDB Atlas');
+  } catch (error) {
+    console.error('Error al conectar a MongoDB Atlas', error);
+  }
+};
 
-module.exports = {
-    conexion
-}
+module.exports = { conexion };
