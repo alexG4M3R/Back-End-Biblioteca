@@ -105,26 +105,27 @@ const crearPrestamo = async (req, res) => {
 
 const actualizarPrestamo = async (req, res) => {
     try {
-        const solicitud = await Prestamo.findByIdAndUpdate(req.params.id, { estado: 'registrado' }, { new: true });
-        if (!solicitud) {
-            return res.status(404).json({
-                status: "error",
-                mensaje: "Solicitud no encontrada"
-            });
+        const { id } = req.params;
+        const { estado, rut } = req.body;
+    
+        const prestamo = await Prestamo.findById(id).populate('usuario');
+        if (!prestamo) {
+            return res.status(404).json({ mensaje: 'Préstamo no encontrado' });
         }
-        res.status(200).json({
-            status: "éxito",
-            solicitud,
-            mensaje: "Estado de la solicitud actualizado a registrado"
-        });
-    } catch (error) {
-        res.status(500).json({
-            status: "error",
-            mensaje: "Error al actualizar el estado de la solicitud",
-            error: error.message
-        });
-    }
-};
+    
+        if (prestamo.usuario.rut !== rut) {
+            console.log("el rut es: ", prestamo.usuario.rut, "el rut que llega es: ", rut);
+            return res.status(400).json({ mensaje: 'RUT incorrecto' });
+        }
+    
+        prestamo.estado = estado;
+        await prestamo.save();
+    
+        res.status(200).json({ mensaje: 'Préstamo actualizado correctamente' });
+        } catch (error) {
+        res.status(500).json({ mensaje: 'Error al actualizar el préstamo', error: error.message });
+        }
+    };
 
 const eliminarPrestamo = async (req, res) => {
     try {
