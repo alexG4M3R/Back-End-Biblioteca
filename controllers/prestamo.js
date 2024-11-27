@@ -53,37 +53,43 @@ const obtenerSolicitudPorId = async (req, res) => {
 
 const crearPrestamo = async (req, res) => {
     try {
-      const { usuarioId, libros, tipo } = req.body;
-  
-      const usuario = await Usuario.findById(usuarioId);
-      if (!usuario) {
-        return res.status(404).json({ mensaje: 'Usuario no encontrado' });
-      }
-  
-      const fechaPrestamo = new Date();
-      let fechaDevolucion = new Date();
-      if (tipo === 'sala') {
-        fechaDevolucion.setHours(fechaDevolucion.getHours() + 2);
-      } else {
-        fechaDevolucion.setDate(fechaDevolucion.getDate() + 7);
-      }
-  
-      const nuevoPrestamo = new Prestamo({
-        usuario: usuarioId,
-        libros,
-        fechaPrestamo,
-        fechaDevolucion,
-        tipo,
-        estado: 'pendiente'
-      });
-  
-      await nuevoPrestamo.save();
-  
-      res.status(201).json({ mensaje: 'Préstamo creado correctamente' });
-    } catch (error) {
-      res.status(500).json({ mensaje: 'Error al crear el préstamo', error: error.message });
-    }
-  };
+        const { usuarioId, libros, tipo } = req.body;
+    
+        const usuario = await Usuario.findById(usuarioId);
+        if (!usuario) {
+            return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+        }
+    
+        const fechaPrestamo = new Date();
+        let fechaDevolucion = new Date();
+        if (tipo === 'sala') {
+            fechaDevolucion.setHours(fechaDevolucion.getHours() + 2);
+        } else {
+            fechaDevolucion.setDate(fechaDevolucion.getDate() + 7);
+        }
+    
+        const nuevoPrestamo = new Prestamo({
+            usuario: usuarioId,
+            libros,
+            fechaPrestamo,
+            fechaDevolucion,
+            tipo,
+            estado: 'pendiente'
+        });
+    
+        await nuevoPrestamo.save();
+    
+        // Actualizar el estado de disponibilidad de los libros
+        await Libro.updateMany(
+            { _id: { $in: libros } },
+            { $set: { disponible: false } }
+        );
+    
+        res.status(201).json({ mensaje: 'Préstamo creado correctamente' });
+        } catch (error) {
+        res.status(500).json({ mensaje: 'Error al crear el préstamo', error: error.message });
+        }
+};
 
 const actualizarPrestamo = async (req, res) => {
     try {
@@ -112,37 +118,30 @@ const actualizarPrestamo = async (req, res) => {
 const eliminarPrestamo = async (req, res) => {
     try {
         const prestamoId = req.params.id;
-
+    
         if (!mongoose.Types.ObjectId.isValid(prestamoId)) {
             return res.status(400).json({
-                status: "error",
-                mensaje: "ID de préstamo no válido"
+            status: "error",
+            mensaje: "ID de préstamo no válido"
             });
         }
-
+    
         const prestamo = await Prestamo.findById(prestamoId);
         if (!prestamo) {
-            return res.status(404).json({
-                status: "error",
-                mensaje: "Préstamo no encontrado"
-            });
+            return res.status(404).json({ mensaje: 'Préstamo no encontrado' });
         }
-
+    
+        // Actualizar el estado de disponibilidad de los libros
+        await Libro.updateMany(
+            { _id: { $in: prestamo.libros } },
+            { $set: { disponible: true } }
+        );
+    
         await Prestamo.findByIdAndDelete(prestamoId);
-
-        await Libro.findByIdAndUpdate(prestamo.libro, { disponible: true });
-
-        return res.status(200).json({
-            status: "éxito",
-            mensaje: "Préstamo eliminado correctamente"
-        });
-
+    
+        res.status(200).json({ mensaje: 'Préstamo eliminado correctamente' });
     } catch (error) {
-        return res.status(500).json({
-            status: "error",
-            mensaje: "Error al eliminar el préstamo",
-            error: error.message
-        });
+        res.status(500).json({ mensaje: 'Error al eliminar el préstamo', error: error.message });
     }
 };
 
