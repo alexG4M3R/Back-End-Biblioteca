@@ -53,55 +53,37 @@ const obtenerSolicitudPorId = async (req, res) => {
 
 const crearPrestamo = async (req, res) => {
     try {
-        const { usuarioId, libros, tipo } = req.body;
-
-        if (!usuarioId || !libros || !tipo ) {
-            console.log("el usuario es: ", usuarioId, "los libros son:",libros, "el tipo es: ",tipo);
-            return res.status(400).json({
-                status: "error",
-                mensaje: "Faltan datos por enviar"
-            });
-        }
-
-        const usuario = await Usuario.findById(usuarioId);
-        if (!usuario) {
-            return res.status(400).json({
-                status: "error",
-                mensaje: "Usuario no encontrado"
-            });
-        }
-
-        const nuevaSolicitud = new Prestamo({
-            usuario: usuarioId,
-            libros,
-            fechaPrestamo: new Date(), // Fecha de préstamo predeterminada a la fecha actual
-            fechaDevolucion: new Date(Date.now() + 7*24*60*60*1000), // Fecha de devolución predeterminada a una semana después
-            tipo
-            
-        });
-
-        const solicitudGuardada = await nuevaSolicitud.save();
-
-        await Usuario.findByIdAndUpdate(usuarioId, { $push: { prestamos: solicitudGuardada._id } });
-        await Promise.all(libros.map(async (libroId) => {
-            await Libro.findByIdAndUpdate(libroId, { $push: { prestamos: solicitudGuardada._id }, disponible: false });
-        }));
-
-        return res.status(200).json({
-            status: "éxito",
-            solicitud: solicitudGuardada,
-            mensaje: "Solicitud creada correctamente!!"
-        });
-
+      const { usuarioId, libros, tipo } = req.body;
+  
+      const usuario = await Usuario.findById(usuarioId);
+      if (!usuario) {
+        return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+      }
+  
+      const fechaPrestamo = new Date();
+      let fechaDevolucion = new Date();
+      if (tipo === 'sala') {
+        fechaDevolucion.setHours(fechaDevolucion.getHours() + 2);
+      } else {
+        fechaDevolucion.setDate(fechaDevolucion.getDate() + 7);
+      }
+  
+      const nuevoPrestamo = new Prestamo({
+        usuario: usuarioId,
+        libros,
+        fechaPrestamo,
+        fechaDevolucion,
+        tipo,
+        estado: 'pendiente'
+      });
+  
+      await nuevoPrestamo.save();
+  
+      res.status(201).json({ mensaje: 'Préstamo creado correctamente' });
     } catch (error) {
-        console.error('Error al crear la solicitud:', error);
-        return res.status(500).json({
-            status: "error",
-            mensaje: "Error al crear la solicitud",
-            error: error.message
-        });
+      res.status(500).json({ mensaje: 'Error al crear el préstamo', error: error.message });
     }
-};
+  };
 
 const actualizarPrestamo = async (req, res) => {
     try {
