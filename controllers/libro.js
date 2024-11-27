@@ -65,10 +65,10 @@ const obtenerLibros = async (req, res) => {
         const query = { disponible: true };
 
         if (titulo) {
-            query.titulo = { $regex: titulo, $options: 'i' }; // Búsqueda insensible a mayúsculas/minúsculas
+            query.titulo = { $regex: titulo, $options: 'i' };
         }
         if (autor) {
-            query.autor = { $regex: autor, $options: 'i' }; // Búsqueda insensible a mayúsculas/minúsculas
+            query.autor = { $regex: autor, $options: 'i' };
         }
 
         const libros = await Libro.find(query);

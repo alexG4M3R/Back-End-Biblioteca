@@ -23,9 +23,9 @@ const LibroSchema = new mongoose.Schema({
     autor: String,
     age: Number,
     isbn: {type: String, unique: true},
-    disponible: { type: Boolean, default: true }, // Disponible por defecto es true
+    disponible: { type: Boolean, default: true },
     prestamos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Prestamo' }],
-    categoria: { type: String, enum: categorias, required: true } // Agregar campo de categoría con enum
+    categoria: { type: String, enum: categorias, required: true }
 }, { collection: 'libros' });
 
 module.exports = mongoose.model('Libro', LibroSchema);

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Prestamo = require('../models/Prestamo');
-const Usuario = require('../models/Usuario'); // Importar el modelo Usuario
+const Usuario = require('../models/Usuario');
 const Libro = require('../models/Libro');
 
 const obtenerPrestamos = async (req, res) => {
@@ -79,7 +79,6 @@ const crearPrestamo = async (req, res) => {
     
         await nuevoPrestamo.save();
     
-        // Actualizar el estado de disponibilidad de los libros
         await Libro.updateMany(
             { _id: { $in: libros } },
             { $set: { disponible: false } }
@@ -131,7 +130,6 @@ const eliminarPrestamo = async (req, res) => {
             return res.status(404).json({ mensaje: 'Préstamo no encontrado' });
         }
     
-        // Actualizar el estado de disponibilidad de los libros
         await Libro.updateMany(
             { _id: { $in: prestamo.libros } },
             { $set: { disponible: true } }
@@ -165,27 +163,22 @@ const devolverLibro = async (req, res) => {
             return res.status(404).json({ mensaje: 'Usuario no encontrado' });
         }
     
-        // Verificar si la devolución es atrasada
         const fechaActual = new Date();
         if (fechaActual > prestamo.fechaDevolucion) {
-            // Crear sanción automática
             usuario.sanciones.push({
             fecha: fechaActual,
             motivo: 'Devolución atrasada',
-            duracion: 7 // Duración de la sanción en días
+            duracion: 7
             });
             await usuario.save();
         }
     
-        // Eliminar el libro del préstamo
         prestamo.libros.pull(libro._id);
         await prestamo.save();
     
-        // Actualizar el estado del libro a disponible
         libro.disponible = true;
         await libro.save();
     
-        // Eliminar el préstamo si no quedan libros
         if (prestamo.libros.length === 0) {
             await Prestamo.findByIdAndDelete(prestamo._id);
         }
