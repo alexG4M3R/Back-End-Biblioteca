@@ -61,7 +61,7 @@ const eliminarLibro = async (req, res) => {
 
 const obtenerLibros = async (req, res) => {
     try {
-        const { titulo, autor } = req.query;
+        const { titulo, autor, categoria } = req.query;
         const query = { disponible: true };
 
         if (titulo) {
@@ -69,6 +69,9 @@ const obtenerLibros = async (req, res) => {
         }
         if (autor) {
             query.autor = { $regex: autor, $options: 'i' };
+        }
+        if (categoria) {
+            query.categoria = categoria;
         }
 
         const libros = await Libro.find(query);
